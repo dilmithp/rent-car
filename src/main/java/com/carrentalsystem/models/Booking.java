@@ -14,6 +14,8 @@ public class Booking {
     private int totalDays;
     private BigDecimal totalAmount;
     private String bookingStatus;
+    private String paymentStatus;
+    private String paymentSlipPath;
     private Timestamp createdAt;
 
     public Booking() {
@@ -31,6 +33,8 @@ public class Booking {
         this.totalDays = totalDays;
         this.totalAmount = totalAmount;
         this.bookingStatus = bookingStatus;
+        this.paymentStatus = "pending";
+        this.paymentSlipPath = null;
         this.createdAt = createdAt;
     }
 
@@ -106,6 +110,22 @@ public class Booking {
         this.bookingStatus = bookingStatus;
     }
 
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentSlipPath() {
+        return paymentSlipPath;
+    }
+
+    public void setPaymentSlipPath(String paymentSlipPath) {
+        this.paymentSlipPath = paymentSlipPath;
+    }
+
     public Timestamp getCreatedAt() {
         return createdAt;
     }
@@ -126,6 +146,8 @@ public class Booking {
                 ", totalDays=" + totalDays +
                 ", totalAmount=" + totalAmount +
                 ", bookingStatus='" + bookingStatus + '\'' +
+                ", paymentStatus='" + paymentStatus + '\'' +
+                ", paymentSlipPath='" + paymentSlipPath + '\'' +
                 ", createdAt=" + createdAt +
                 '}';
     }

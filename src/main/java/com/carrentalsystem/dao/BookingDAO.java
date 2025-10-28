@@ -155,6 +155,22 @@ public class BookingDAO {
         }
     }
 
+    public boolean updatePaymentStatus(int bookingId, String paymentStatus, String paymentSlipPath) {
+        String query = "UPDATE bookings SET payment_status = ?, payment_slip_path = ? WHERE booking_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, paymentStatus);
+            pstmt.setString(2, paymentSlipPath);
+            pstmt.setInt(3, bookingId);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating payment status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean deleteBooking(int bookingId) {
         String query = "DELETE FROM bookings WHERE booking_id = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
@@ -180,6 +196,8 @@ public class BookingDAO {
         booking.setTotalDays(rs.getInt("total_days"));
         booking.setTotalAmount(rs.getBigDecimal("total_amount"));
         booking.setBookingStatus(rs.getString("booking_status"));
+        booking.setPaymentStatus(rs.getString("payment_status"));
+        booking.setPaymentSlipPath(rs.getString("payment_slip_path"));
         booking.setCreatedAt(rs.getTimestamp("created_at"));
         return booking;
     }

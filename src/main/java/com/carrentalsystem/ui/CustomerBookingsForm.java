@@ -37,6 +37,7 @@ public class CustomerBookingsForm extends JFrame {
 
     private JButton refreshButton;
     private JButton cancelButton;
+    private JButton paymentButton;
     private JButton backButton;
 
     private int selectedBookingId = -1;
@@ -179,9 +180,11 @@ public class CustomerBookingsForm extends JFrame {
         buttonPanel.setBackground(lightBg);
 
         refreshButton = createActionButton("Refresh List", primaryColor);
+        paymentButton = createActionButton("Make Payment", successColor);
         cancelButton = createActionButton("Cancel Selected Booking", dangerColor);
 
         buttonPanel.add(refreshButton);
+        buttonPanel.add(paymentButton);
         buttonPanel.add(cancelButton);
     }
 
@@ -242,6 +245,13 @@ public class CustomerBookingsForm extends JFrame {
                 loadBookingData();
                 JOptionPane.showMessageDialog(CustomerBookingsForm.this,
                         "Bookings list refreshed!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
+        paymentButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openPaymentForm();
             }
         });
 
@@ -335,5 +345,32 @@ public class CustomerBookingsForm extends JFrame {
                 JOptionPane.showMessageDialog(this, "Failed to cancel booking!", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    private void openPaymentForm() {
+        if (selectedBookingId == -1) {
+            JOptionPane.showMessageDialog(this, "Please select a booking to make payment!", "Warning", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Booking booking = bookingDAO.getBookingById(selectedBookingId);
+        if (booking == null) {
+            JOptionPane.showMessageDialog(this, "Booking not found!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (booking.getBookingStatus().equals("cancelled")) {
+            JOptionPane.showMessageDialog(this, "Cannot make payment for a cancelled booking!", "Warning", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        PaymentForm paymentForm = new PaymentForm(currentUser, booking);
+        paymentForm.setVisible(true);
+        paymentForm.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent windowEvent) {
+                loadBookingData(); // Refresh the table after payment form is closed
+            }
+        });
     }
 }

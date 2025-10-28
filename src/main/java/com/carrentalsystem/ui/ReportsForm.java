@@ -7,15 +7,23 @@ import com.carrentalsystem.models.Booking;
 import com.carrentalsystem.models.Customer;
 import com.carrentalsystem.models.User;
 import com.carrentalsystem.models.Vehicle;
+import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class ReportsForm extends JFrame {
@@ -30,6 +38,7 @@ public class ReportsForm extends JFrame {
     private JPanel statsPanel;
     private JPanel detailsPanel;
     private JButton backButton;
+    private JButton downloadPdfButton;
 
     private Color primaryColor = new Color(41, 128, 185);
     private Color secondaryColor = new Color(52, 73, 94);
@@ -83,6 +92,9 @@ public class ReportsForm extends JFrame {
         userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         userLabel.setForeground(Color.WHITE);
 
+        downloadPdfButton = createHeaderButton("Download PDF Report", successColor);
+        downloadPdfButton.addActionListener(e -> generatePdfReport());
+
         backButton = createHeaderButton("Back to Dashboard", secondaryColor);
         backButton.addActionListener(new ActionListener() {
             @Override
@@ -92,6 +104,7 @@ public class ReportsForm extends JFrame {
         });
 
         rightPanel.add(userLabel);
+        rightPanel.add(downloadPdfButton);
         rightPanel.add(backButton);
 
         headerPanel.add(titleLabel, BorderLayout.WEST);
@@ -312,5 +325,181 @@ public class ReportsForm extends JFrame {
         add(mainPanel);
 
         setMinimumSize(new Dimension(900, 500));
+    }
+
+    private void generatePdfReport() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save PDF Report");
+
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        fileChooser.setSelectedFile(new java.io.File("CarRentalReport_" + timestamp + ".pdf"));
+
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("PDF Files", "pdf");
+        fileChooser.setFileFilter(filter);
+
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToSave = fileChooser.getSelectedFile();
+            String filePath = fileToSave.getAbsolutePath();
+
+            if (!filePath.toLowerCase().endsWith(".pdf")) {
+                filePath += ".pdf";
+            }
+
+            try {
+                Document document = new Document(PageSize.A4);
+                PdfWriter.getInstance(document, new FileOutputStream(filePath));
+                document.open();
+
+                // Title
+                com.itextpdf.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 24, BaseColor.DARK_GRAY);
+                Paragraph title = new Paragraph("Smart Car Rental System\nReports & Analytics", titleFont);
+                title.setAlignment(Element.ALIGN_CENTER);
+                title.setSpacingAfter(20);
+                document.add(title);
+
+                // Date
+                com.itextpdf.text.Font dateFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.GRAY);
+                Paragraph date = new Paragraph("Generated on: " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()), dateFont);
+                date.setAlignment(Element.ALIGN_CENTER);
+                date.setSpacingAfter(30);
+                document.add(date);
+
+                // Gather statistics
+                List<Vehicle> allVehicles = vehicleDAO.getAllVehicles();
+                List<Vehicle> availableVehicles = vehicleDAO.getAvailableVehicles();
+                List<Customer> allCustomers = customerDAO.getAllCustomers();
+                List<Customer> activeCustomers = customerDAO.getActiveCustomers();
+                List<Booking> allBookings = bookingDAO.getAllBookings();
+                List<Booking> pendingBookings = bookingDAO.getPendingBookings();
+
+                BigDecimal totalRevenue = BigDecimal.ZERO;
+                for (Booking booking : allBookings) {
+                    if (booking.getBookingStatus().equals("completed")) {
+                        totalRevenue = totalRevenue.add(booking.getTotalAmount());
+                    }
+                }
+
+                int rentedVehicles = allVehicles.size() - availableVehicles.size();
+                long completedBookings = allBookings.stream().filter(b -> b.getBookingStatus().equals("completed")).count();
+                long confirmedBookings = allBookings.stream().filter(b -> b.getBookingStatus().equals("confirmed")).count();
+                long cancelledBookings = allBookings.stream().filter(b -> b.getBookingStatus().equals("cancelled")).count();
+
+                // Statistics Section
+                com.itextpdf.text.Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
+                Paragraph statsTitle = new Paragraph("Key Statistics", sectionFont);
+                statsTitle.setSpacingBefore(10);
+                statsTitle.setSpacingAfter(15);
+                document.add(statsTitle);
+
+                // Statistics Table
+                PdfPTable statsTable = new PdfPTable(2);
+                statsTable.setWidthPercentage(100);
+                statsTable.setSpacingAfter(20);
+
+                com.itextpdf.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE);
+                com.itextpdf.text.Font cellFont = FontFactory.getFont(FontFactory.HELVETICA, 11, BaseColor.BLACK);
+
+                // Add statistics
+                addStatRow(statsTable, "Total Vehicles", String.valueOf(allVehicles.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Available Vehicles", String.valueOf(availableVehicles.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Rented Vehicles", String.valueOf(rentedVehicles), headerFont, cellFont);
+                addStatRow(statsTable, "Total Customers", String.valueOf(allCustomers.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Active Customers", String.valueOf(activeCustomers.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Total Bookings", String.valueOf(allBookings.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Completed Bookings", String.valueOf(completedBookings), headerFont, cellFont);
+                addStatRow(statsTable, "Confirmed Bookings", String.valueOf(confirmedBookings), headerFont, cellFont);
+                addStatRow(statsTable, "Pending Bookings", String.valueOf(pendingBookings.size()), headerFont, cellFont);
+                addStatRow(statsTable, "Cancelled Bookings", String.valueOf(cancelledBookings), headerFont, cellFont);
+                addStatRow(statsTable, "Total Revenue", "LKR " + totalRevenue, headerFont, cellFont);
+
+                document.add(statsTable);
+
+                // Vehicle Breakdown Section
+                Paragraph vehicleTitle = new Paragraph("Vehicle Breakdown by Type", sectionFont);
+                vehicleTitle.setSpacingBefore(10);
+                vehicleTitle.setSpacingAfter(15);
+                document.add(vehicleTitle);
+
+                PdfPTable vehicleTable = new PdfPTable(2);
+                vehicleTable.setWidthPercentage(100);
+                vehicleTable.setSpacingAfter(20);
+
+                addStatRow(vehicleTable, "Sedan", String.valueOf(vehicleDAO.getVehiclesByType("sedan").size()), headerFont, cellFont);
+                addStatRow(vehicleTable, "SUV", String.valueOf(vehicleDAO.getVehiclesByType("suv").size()), headerFont, cellFont);
+                addStatRow(vehicleTable, "Van", String.valueOf(vehicleDAO.getVehiclesByType("van").size()), headerFont, cellFont);
+                addStatRow(vehicleTable, "Luxury", String.valueOf(vehicleDAO.getVehiclesByType("luxury").size()), headerFont, cellFont);
+                addStatRow(vehicleTable, "Economy", String.valueOf(vehicleDAO.getVehiclesByType("economy").size()), headerFont, cellFont);
+
+                document.add(vehicleTable);
+
+                // Revenue Statistics Section
+                Paragraph revenueTitle = new Paragraph("Revenue Statistics", sectionFont);
+                revenueTitle.setSpacingBefore(10);
+                revenueTitle.setSpacingAfter(15);
+                document.add(revenueTitle);
+
+                BigDecimal avgBookingAmount = completedBookings == 0 ? BigDecimal.ZERO :
+                        totalRevenue.divide(new BigDecimal(completedBookings), 2, BigDecimal.ROUND_HALF_UP);
+
+                PdfPTable revenueTable = new PdfPTable(2);
+                revenueTable.setWidthPercentage(100);
+                revenueTable.setSpacingAfter(20);
+
+                addStatRow(revenueTable, "Total Revenue", "LKR " + totalRevenue, headerFont, cellFont);
+                addStatRow(revenueTable, "Average Booking Amount", "LKR " + avgBookingAmount, headerFont, cellFont);
+                addStatRow(revenueTable, "Completed Bookings", String.valueOf(completedBookings), headerFont, cellFont);
+
+                document.add(revenueTable);
+
+                // Footer
+                com.itextpdf.text.Font footerFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 10, BaseColor.GRAY);
+                Paragraph footer = new Paragraph("\n\nThis report was generated automatically by Smart Car Rental System.\nFor more information, please contact the system administrator.", footerFont);
+                footer.setAlignment(Element.ALIGN_CENTER);
+                document.add(footer);
+
+                document.close();
+
+                JOptionPane.showMessageDialog(this,
+                        "PDF report generated successfully!\nSaved to: " + filePath,
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+
+                // Ask if user wants to open the file
+                int openFile = JOptionPane.showConfirmDialog(this,
+                        "Do you want to open the PDF file now?",
+                        "Open File",
+                        JOptionPane.YES_NO_OPTION);
+
+                if (openFile == JOptionPane.YES_OPTION) {
+                    if (java.awt.Desktop.isDesktopSupported()) {
+                        java.awt.Desktop.getDesktop().open(new java.io.File(filePath));
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this,
+                        "Error generating PDF: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void addStatRow(PdfPTable table, String label, String value, com.itextpdf.text.Font headerFont, com.itextpdf.text.Font cellFont) {
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, cellFont));
+        labelCell.setPadding(8);
+        labelCell.setBackgroundColor(new BaseColor(240, 240, 240));
+        labelCell.setBorderColor(BaseColor.LIGHT_GRAY);
+
+        PdfPCell valueCell = new PdfPCell(new Phrase(value, cellFont));
+        valueCell.setPadding(8);
+        valueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        valueCell.setBorderColor(BaseColor.LIGHT_GRAY);
+
+        table.addCell(labelCell);
+        table.addCell(valueCell);
     }
 }
