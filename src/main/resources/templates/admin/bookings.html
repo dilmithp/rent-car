@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; margin: 5px 15px; border-radius: 8px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <nav class="col-md-2 d-md-block sidebar">
+                <div class="position-sticky pt-4">
+                    <div class="text-center mb-4"><i class="fas fa-car fa-3x text-white mb-2"></i><h5 class="text-white">Car Rental</h5></div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/vehicles}"><i class="fas fa-car"></i> Vehicles</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/customers}"><i class="fas fa-users"></i> Customers</a></li>
+                        <li class="nav-item"><a class="nav-link active" th:href="@{/admin/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/bookings/pending-payments}"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+                        <hr class="text-white">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main class="col-md-10 ms-sm-auto px-4 py-4">
+                <h2 class="mb-4">Booking Management</h2>
+
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                    <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">All Bookings</h5>
+                        <a th:href="@{/admin/bookings/export}" class="btn btn-sm btn-success"><i class="fas fa-file-pdf"></i> Export PDF</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <select class="form-control" onchange="window.location.href='/admin/bookings?status=' + this.value">
+                                    <option value="">All Status</option>
+                                    <option value="Pending" th:selected="${selectedStatus == 'Pending'}">Pending</option>
+                                    <option value="Confirmed" th:selected="${selectedStatus == 'Confirmed'}">Confirmed</option>
+                                    <option value="Completed" th:selected="${selectedStatus == 'Completed'}">Completed</option>
+                                    <option value="Cancelled" th:selected="${selectedStatus == 'Cancelled'}">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Customer</th>
+                                        <th>Vehicle</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Amount</th>
+                                        <th>Booking Status</th>
+                                        <th>Payment</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="b : ${bookings}">
+                                        <td th:text="${b.bookingId}"></td>
+                                        <td th:text="${b.customer.fullName}"></td>
+                                        <td th:text="${b.vehicle.brand + ' ' + b.vehicle.model}"></td>
+                                        <td th:text="${b.startDate}"></td>
+                                        <td th:text="${b.endDate}"></td>
+                                        <td th:text="${b.totalDays}"></td>
+                                        <td th:text="${'LKR ' + b.totalAmount}"></td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="${b.bookingStatus == 'Confirmed'} ? 'bg-success' :
+                                                                (${b.bookingStatus == 'Pending'} ? 'bg-warning' :
+                                                                (${b.bookingStatus == 'Completed'} ? 'bg-info' : 'bg-secondary'))"
+                                                  th:text="${b.bookingStatus}"></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="${b.paymentStatus == 'Approved'} ? 'bg-success' :
+                                                                (${b.paymentStatus == 'Submitted'} ? 'bg-info' : 'bg-warning')"
+                                                  th:text="${b.paymentStatus}"></span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a th:href="@{/admin/bookings/view/{id}(id=${b.bookingId})}" class="btn btn-info" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a th:href="@{/admin/bookings/receipt/{id}(id=${b.bookingId})}" class="btn btn-secondary" title="Receipt">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                                        th:attr="data-bs-target='#statusModal' + ${b.bookingId}" title="Update Status">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <a th:href="@{/admin/bookings/delete/{id}(id=${b.bookingId})}"
+                                                   class="btn btn-danger" onclick="return confirm('Delete booking?')" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+
+                                            <!-- Status Update Modal -->
+                                            <div class="modal fade" th:id="'statusModal' + ${b.bookingId}" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Update Booking Status</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <form th:action="@{/admin/bookings/update-status/{id}(id=${b.bookingId})}" method="post">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Booking Status</label>
+                                                                    <select name="status" class="form-control">
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="Confirmed">Confirmed</option>
+                                                                        <option value="Active">Active</option>
+                                                                        <option value="Completed">Completed</option>
+                                                                        <option value="Cancelled">Cancelled</option>
+                                                                    </select>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-primary">Update</button>
+                                                            </form>
+                                                            <hr>
+                                                            <form th:action="@{/admin/bookings/update-payment/{id}(id=${b.bookingId})}" method="post">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Payment Status</label>
+                                                                    <select name="paymentStatus" class="form-control">
+                                                                        <option value="Pending">Pending</option>
+                                                                        <option value="Submitted">Submitted</option>
+                                                                        <option value="Approved">Approved</option>
+                                                                        <option value="Rejected">Rejected</option>
+                                                                    </select>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-success">Update Payment</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${bookings.isEmpty()}">
+                                        <td colspan="10" class="text-center text-muted">No bookings found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

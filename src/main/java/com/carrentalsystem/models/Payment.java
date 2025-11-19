@@ -1,99 +1,64 @@
 package com.carrentalsystem.models;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "payments")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(exclude = {"booking"})
+@ToString(exclude = {"booking"})
 public class Payment {
-    private int paymentId;
-    private int bookingId;
-    private Date paymentDate;
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "payment_id")
+    private Integer paymentId;
+
+    @OneToOne
+    @JoinColumn(name = "booking_id", nullable = false, unique = true)
+    @NotNull(message = "Booking is required")
+    private Booking booking;
+
+    @Column(name = "payment_date", nullable = false)
+    @NotNull(message = "Payment date is required")
+    private LocalDate paymentDate;
+
+    @Column(name = "amount", nullable = false, precision = 10, scale = 2)
+    @NotNull(message = "Amount is required")
     private BigDecimal amount;
+
+    @Column(name = "payment_method", length = 50)
     private String paymentMethod;
-    private String paymentStatus;
-    private Timestamp createdAt;
 
-    public Payment() {
+    @Column(name = "payment_status", length = 20, nullable = false)
+    private String paymentStatus = "Pending";
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (paymentStatus == null) {
+            paymentStatus = "Pending";
+        }
+        if (paymentDate == null) {
+            paymentDate = LocalDate.now();
+        }
     }
 
-    public Payment(int paymentId, int bookingId, Date paymentDate,
-                   BigDecimal amount, String paymentMethod, String paymentStatus,
-                   Timestamp createdAt) {
-        this.paymentId = paymentId;
-        this.bookingId = bookingId;
-        this.paymentDate = paymentDate;
-        this.amount = amount;
-        this.paymentMethod = paymentMethod;
-        this.paymentStatus = paymentStatus;
-        this.createdAt = createdAt;
-    }
-
-    public int getPaymentId() {
-        return paymentId;
-    }
-
-    public void setPaymentId(int paymentId) {
-        this.paymentId = paymentId;
-    }
-
-    public int getBookingId() {
-        return bookingId;
-    }
-
-    public void setBookingId(int bookingId) {
-        this.bookingId = bookingId;
-    }
-
-    public Date getPaymentDate() {
-        return paymentDate;
-    }
-
-    public void setPaymentDate(Date paymentDate) {
-        this.paymentDate = paymentDate;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Payment{" +
-                "paymentId=" + paymentId +
-                ", bookingId=" + bookingId +
-                ", paymentDate=" + paymentDate +
-                ", amount=" + amount +
-                ", paymentMethod='" + paymentMethod + '\'' +
-                ", paymentStatus='" + paymentStatus + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+    // Helper method for backward compatibility
+    @Transient
+    public Integer getBookingId() {
+        return booking != null ? booking.getBookingId() : null;
     }
 }

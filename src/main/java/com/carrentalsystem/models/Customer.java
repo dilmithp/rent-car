@@ -1,119 +1,74 @@
 package com.carrentalsystem.models;
 
-import java.sql.Timestamp;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = "customers")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(exclude = {"user", "bookings"})
+@ToString(exclude = {"user", "bookings"})
 public class Customer {
-    private int customerId;
-    private int userId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "customer_id")
+    private Integer customerId;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    @NotBlank(message = "Full name is required")
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
+    @Column(name = "email", unique = true, nullable = false, length = 100)
     private String email;
+
+    @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number should be valid")
+    @Column(name = "phone", nullable = false, length = 20)
     private String phone;
+
+    @Column(name = "address", length = 255)
     private String address;
+
+    @NotBlank(message = "License number is required")
+    @Column(name = "license_number", unique = true, nullable = false, length = 50)
     private String licenseNumber;
-    private String status;
-    private Timestamp createdAt;
 
-    public Customer() {
+    @Column(name = "status", length = 20, nullable = false)
+    private String status = "Active";
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Booking> bookings;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = "Active";
+        }
     }
-
-    public Customer(int customerId, int userId, String fullName, String email,
-                    String phone, String address, String licenseNumber,
-                    String status, Timestamp createdAt) {
-        this.customerId = customerId;
-        this.userId = userId;
-        this.fullName = fullName;
-        this.email = email;
-        this.phone = phone;
-        this.address = address;
-        this.licenseNumber = licenseNumber;
-        this.status = status;
-        this.createdAt = createdAt;
-    }
-
-    public int getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(int customerId) {
-        this.customerId = customerId;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getLicenseNumber() {
-        return licenseNumber;
-    }
-
-    public void setLicenseNumber(String licenseNumber) {
-        this.licenseNumber = licenseNumber;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Customer{" +
-                "customerId=" + customerId +
-                ", userId=" + userId +
-                ", fullName='" + fullName + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", address='" + address + '\'' +
-                ", licenseNumber='" + licenseNumber + '\'' +
-                ", status='" + status + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+    
+    // Helper method to get userId for backward compatibility
+    @Transient
+    public Integer getUserId() {
+        return user != null ? user.getUserId() : null;
     }
 }
