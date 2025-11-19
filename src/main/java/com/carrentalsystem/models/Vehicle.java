@@ -1,131 +1,71 @@
 package com.carrentalsystem.models;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
+
 import java.math.BigDecimal;
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
 
+@Entity
+@Table(name = "vehicles")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(exclude = {"bookings"})
+@ToString(exclude = {"bookings"})
 public class Vehicle {
-    private int vehicleId;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "vehicle_id")
+    private Integer vehicleId;
+
+    @NotBlank(message = "Vehicle number is required")
+    @Column(name = "vehicle_number", unique = true, nullable = false, length = 50)
     private String vehicleNumber;
+
+    @NotBlank(message = "Brand is required")
+    @Column(name = "brand", nullable = false, length = 50)
     private String brand;
+
+    @NotBlank(message = "Model is required")
+    @Column(name = "model", nullable = false, length = 50)
     private String model;
+
+    @NotBlank(message = "Vehicle type is required")
+    @Column(name = "vehicle_type", nullable = false, length = 50)
     private String vehicleType;
-    private int year;
+
+    @Min(value = 1900, message = "Year must be valid")
+    @Max(value = 2100, message = "Year must be valid")
+    @Column(name = "year", nullable = false)
+    private Integer year;
+
+    @Column(name = "color", length = 30)
     private String color;
+
+    @NotNull(message = "Daily rate is required")
+    @DecimalMin(value = "0.01", message = "Daily rate must be greater than 0")
+    @Column(name = "daily_rate", nullable = false, precision = 10, scale = 2)
     private BigDecimal dailyRate;
-    private String availabilityStatus;
-    private Timestamp createdAt;
 
-    public Vehicle() {
-    }
+    @Column(name = "availability_status", length = 20, nullable = false)
+    private String availabilityStatus = "Available";
 
-    public Vehicle(int vehicleId, String vehicleNumber, String brand, String model,
-                   String vehicleType, int year, String color, BigDecimal dailyRate,
-                   String availabilityStatus, Timestamp createdAt) {
-        this.vehicleId = vehicleId;
-        this.vehicleNumber = vehicleNumber;
-        this.brand = brand;
-        this.model = model;
-        this.vehicleType = vehicleType;
-        this.year = year;
-        this.color = color;
-        this.dailyRate = dailyRate;
-        this.availabilityStatus = availabilityStatus;
-        this.createdAt = createdAt;
-    }
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    public int getVehicleId() {
-        return vehicleId;
-    }
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Booking> bookings;
 
-    public void setVehicleId(int vehicleId) {
-        this.vehicleId = vehicleId;
-    }
-
-    public String getVehicleNumber() {
-        return vehicleNumber;
-    }
-
-    public void setVehicleNumber(String vehicleNumber) {
-        this.vehicleNumber = vehicleNumber;
-    }
-
-    public String getBrand() {
-        return brand;
-    }
-
-    public void setBrand(String brand) {
-        this.brand = brand;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public void setModel(String model) {
-        this.model = model;
-    }
-
-    public String getVehicleType() {
-        return vehicleType;
-    }
-
-    public void setVehicleType(String vehicleType) {
-        this.vehicleType = vehicleType;
-    }
-
-    public int getYear() {
-        return year;
-    }
-
-    public void setYear(int year) {
-        this.year = year;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    public BigDecimal getDailyRate() {
-        return dailyRate;
-    }
-
-    public void setDailyRate(BigDecimal dailyRate) {
-        this.dailyRate = dailyRate;
-    }
-
-    public String getAvailabilityStatus() {
-        return availabilityStatus;
-    }
-
-    public void setAvailabilityStatus(String availabilityStatus) {
-        this.availabilityStatus = availabilityStatus;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Vehicle{" +
-                "vehicleId=" + vehicleId +
-                ", vehicleNumber='" + vehicleNumber + '\'' +
-                ", brand='" + brand + '\'' +
-                ", model='" + model + '\'' +
-                ", vehicleType='" + vehicleType + '\'' +
-                ", year=" + year +
-                ", color='" + color + '\'' +
-                ", dailyRate=" + dailyRate +
-                ", availabilityStatus='" + availabilityStatus + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (availabilityStatus == null) {
+            availabilityStatus = "Available";
+        }
     }
 }

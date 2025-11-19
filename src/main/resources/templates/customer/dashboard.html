@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Dashboard - Smart Car Rental System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card {
+            border-radius: 12px;
+            padding: 25px;
+            color: white;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card h6 { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
+        .stat-card h2 { font-size: 32px; font-weight: bold; margin-bottom: 15px; }
+        .stat-card i { position: absolute; right: 20px; top: 20px; opacity: 0.3; }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .nav-pills .nav-link {
+            border-radius: 8px;
+            color: #667eea;
+            font-weight: 500;
+        }
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .table { font-size: 14px; }
+        .badge { padding: 6px 12px; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-car"></i> Smart Car Rental</a>
+            <div class="d-flex align-items-center">
+                <span class="navbar-text text-white me-3">
+                    <i class="fas fa-user"></i> Welcome, <strong th:text="${customer.fullName}">Customer</strong>
+                </span>
+                <a th:href="@{/logout}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Navigation Pills -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/customer/dashboard}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/customer/browse}">
+                            <i class="fas fa-car"></i> Browse Vehicles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/customer/mybookings}">
+                            <i class="fas fa-calendar-check"></i> My Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/customer/profile}">
+                            <i class="fas fa-user-circle"></i> Profile
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+
+        <!-- Statistics Cards -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card position-relative" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h6>Total Bookings</h6>
+                    <h2 th:text="${totalBookings}">0</h2>
+                    <i class="fas fa-calendar-check fa-3x"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card position-relative" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h6>Pending</h6>
+                    <h2 th:text="${pendingBookings}">0</h2>
+                    <i class="fas fa-clock fa-3x"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card position-relative" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h6>Confirmed</h6>
+                    <h2 th:text="${confirmedBookings}">0</h2>
+                    <i class="fas fa-check-circle fa-3x"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card position-relative" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <h6>Profile Status</h6>
+                    <h2 th:text="${customer.status}">Active</h2>
+                    <i class="fas fa-user-check fa-3x"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Bookings -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                        <h5 class="mb-0"><i class="fas fa-history"></i> Recent Bookings</h5>
+                        <a th:href="@{/customer/mybookings}" class="btn btn-sm btn-primary">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Vehicle</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Payment</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="b : ${recentBookings}">
+                                        <td th:text="${b.bookingId}">1</td>
+                                        <td>
+                                            <strong th:text="${b.vehicle.brand + ' ' + b.vehicle.model}">Toyota Camry</strong><br>
+                                            <small class="text-muted" th:text="${b.vehicle.vehicleNumber}">ABC-1234</small>
+                                        </td>
+                                        <td th:text="${b.startDate}">2025-11-20</td>
+                                        <td th:text="${b.endDate}">2025-11-25</td>
+                                        <td th:text="${b.totalDays}">5</td>
+                                        <td><strong th:text="${'LKR ' + b.totalAmount}">LKR 25000.00</strong></td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="${b.bookingStatus == 'Confirmed'} ? 'bg-success' :
+                                                                (${b.bookingStatus == 'Pending'} ? 'bg-warning' :
+                                                                (${b.bookingStatus == 'Completed'} ? 'bg-info' : 'bg-secondary'))"
+                                                  th:text="${b.bookingStatus}">Pending</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge"
+                                                  th:classappend="${b.paymentStatus == 'Approved'} ? 'bg-success' :
+                                                                (${b.paymentStatus == 'Submitted'} ? 'bg-info' :
+                                                                (${b.paymentStatus == 'Rejected'} ? 'bg-danger' : 'bg-warning'))"
+                                                  th:text="${b.paymentStatus}">Pending</span>
+                                        </td>
+                                        <td>
+                                            <a th:href="@{/customer/booking/{id}(id=${b.bookingId})}"
+                                               class="btn btn-sm btn-info" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${recentBookings.isEmpty()}">
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            No bookings yet. <a th:href="@{/customer/browse}">Browse vehicles</a> to get started!
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body text-center py-4">
+                        <h5 class="mb-3"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                        <a th:href="@{/customer/browse}" class="btn btn-primary btn-lg me-2">
+                            <i class="fas fa-car"></i> Browse Vehicles
+                        </a>
+                        <a th:href="@{/customer/mybookings}" class="btn btn-success btn-lg me-2">
+                            <i class="fas fa-calendar-check"></i> View My Bookings
+                        </a>
+                        <a th:href="@{/customer/profile}" class="btn btn-info btn-lg">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

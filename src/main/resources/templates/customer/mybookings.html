@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Bookings - Smart Car Rental System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .nav-pills .nav-link { border-radius: 8px; color: #667eea; font-weight: 500; }
+        .nav-pills .nav-link.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .table { font-size: 14px; }
+        .badge { padding: 6px 12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-car"></i> Smart Car Rental</a>
+            <div class="d-flex align-items-center">
+                <a th:href="@{/logout}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Navigation Pills -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <ul class="nav nav-pills">
+                    <li class="nav-item"><a class="nav-link" th:href="@{/customer/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/customer/browse}"><i class="fas fa-car"></i> Browse Vehicles</a></li>
+                    <li class="nav-item"><a class="nav-link active" th:href="@{/customer/mybookings}"><i class="fas fa-calendar-check"></i> My Bookings</a></li>
+                    <li class="nav-item"><a class="nav-link" th:href="@{/customer/profile}"><i class="fas fa-user-circle"></i> Profile</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <h2 class="mb-4"><i class="fas fa-calendar-check"></i> My Bookings</h2>
+
+        <!-- Bookings List -->
+        <div class="card">
+            <div class="card-body">
+                <!-- Filter -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select class="form-control" onchange="window.location.href='/customer/mybookings?status=' + this.value">
+                            <option value="">All Bookings</option>
+                            <option value="Pending" th:selected="${selectedStatus == 'Pending'}">Pending</option>
+                            <option value="Confirmed" th:selected="${selectedStatus == 'Confirmed'}">Confirmed</option>
+                            <option value="Completed" th:selected="${selectedStatus == 'Completed'}">Completed</option>
+                            <option value="Cancelled" th:selected="${selectedStatus == 'Cancelled'}">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Vehicle</th>
+                                <th>Booking Date</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Days</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="b : ${bookings}">
+                                <td th:text="${b.bookingId}">1</td>
+                                <td>
+                                    <strong th:text="${b.vehicle.brand + ' ' + b.vehicle.model}">Toyota Camry</strong><br>
+                                    <small class="text-muted" th:text="${b.vehicle.vehicleNumber}">ABC-1234</small>
+                                </td>
+                                <td th:text="${b.bookingDate}">2025-11-19</td>
+                                <td th:text="${b.startDate}">2025-11-20</td>
+                                <td th:text="${b.endDate}">2025-11-25</td>
+                                <td th:text="${b.totalDays}">5</td>
+                                <td><strong th:text="${'LKR ' + b.totalAmount}">LKR 25000.00</strong></td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${b.bookingStatus == 'Confirmed'} ? 'bg-success' :
+                                                        (${b.bookingStatus == 'Pending'} ? 'bg-warning' :
+                                                        (${b.bookingStatus == 'Completed'} ? 'bg-info' : 'bg-secondary'))"
+                                          th:text="${b.bookingStatus}">Pending</span>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${b.paymentStatus == 'Approved'} ? 'bg-success' :
+                                                        (${b.paymentStatus == 'Submitted'} ? 'bg-info' :
+                                                        (${b.paymentStatus == 'Rejected'} ? 'bg-danger' : 'bg-warning'))"
+                                          th:text="${b.paymentStatus}">Pending</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/customer/booking/{id}(id=${b.bookingId})}"
+                                           class="btn btn-info" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a th:href="@{/customer/booking/{id}/receipt(id=${b.bookingId})}"
+                                           class="btn btn-secondary" title="Download Receipt"
+                                           th:if="${b.paymentStatus == 'Approved'}">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${bookings.isEmpty()}">
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    No bookings found. <a th:href="@{/customer/browse}">Browse vehicles</a> to create your first booking!
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

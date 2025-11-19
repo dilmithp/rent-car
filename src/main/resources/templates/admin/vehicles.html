@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Management - Smart Car Rental System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { --primary-color: #667eea; --secondary-color: #764ba2; }
+        body { min-height: 100vh; background-color: #f8f9fa; }
+        .sidebar { min-height: 100vh; background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; margin: 5px 15px; border-radius: 8px; transition: all 0.3s; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background-color: rgba(255,255,255,0.2); }
+        .sidebar .nav-link i { width: 25px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .table { font-size: 14px; }
+        .table tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-2 d-md-block sidebar">
+                <div class="position-sticky pt-4">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-car fa-3x text-white mb-2"></i>
+                        <h5 class="text-white">Car Rental</h5>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/dashboard}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link active" th:href="@{/admin/vehicles}"><i class="fas fa-car"></i> Vehicles</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/customers}"><i class="fas fa-users"></i> Customers</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/bookings}"><i class="fas fa-calendar-check"></i> Bookings</a></li>
+                        <li class="nav-item"><a class="nav-link" th:href="@{/admin/bookings/pending-payments}"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+                        <hr class="text-white">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/logout}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-10 ms-sm-auto px-4">
+                <div class="py-4">
+                    <h2 class="mb-4">Vehicle Management</h2>
+
+                    <!-- Alerts -->
+                    <div th:if="${success}" class="alert alert-success alert-dismissible fade show">
+                        <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <!-- Add Vehicle Form -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0" th:text="${editMode ? 'Edit Vehicle' : 'Add New Vehicle'}"></h5>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="${editMode ? '/admin/vehicles/update' : '/admin/vehicles/add'}"
+                                  method="post" th:object="${vehicle}">
+                                <input type="hidden" th:field="*{vehicleId}" th:if="${editMode}">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Vehicle Number *</label>
+                                        <input type="text" class="form-control" th:field="*{vehicleNumber}" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Brand *</label>
+                                        <input type="text" class="form-control" th:field="*{brand}" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Model *</label>
+                                        <input type="text" class="form-control" th:field="*{model}" required>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Type *</label>
+                                        <select class="form-control" th:field="*{vehicleType}" required>
+                                            <option value="">Select Type</option>
+                                            <option value="Sedan">Sedan</option>
+                                            <option value="SUV">SUV</option>
+                                            <option value="Hatchback">Hatchback</option>
+                                            <option value="Van">Van</option>
+                                            <option value="Truck">Truck</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Year *</label>
+                                        <input type="number" class="form-control" th:field="*{year}" min="1900" max="2100" required>
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Color</label>
+                                        <input type="text" class="form-control" th:field="*{color}">
+                                    </div>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">Daily Rate (LKR) *</label>
+                                        <input type="number" step="0.01" class="form-control" th:field="*{dailyRate}" required>
+                                    </div>
+                                    <div class="col-md-3 mb-3" th:if="${editMode}">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-control" th:field="*{availabilityStatus}">
+                                            <option value="Available">Available</option>
+                                            <option value="Booked">Booked</option>
+                                            <option value="Maintenance">Maintenance</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i th:class="${editMode ? 'fas fa-save' : 'fas fa-plus'}"></i>
+                                    <span th:text="${editMode ? 'Update Vehicle' : 'Add Vehicle'}"></span>
+                                </button>
+                                <a th:href="@{/admin/vehicles}" class="btn btn-secondary" th:if="${editMode}">Cancel</a>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle List -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">All Vehicles</h5>
+                            <div>
+                                <a th:href="@{/admin/vehicles/export}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-file-pdf"></i> Export PDF
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Search/Filter -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <form th:action="@{/admin/vehicles}" method="get" class="d-flex">
+                                        <input type="text" name="search" class="form-control me-2"
+                                               placeholder="Search by brand or model..." th:value="${searchKeyword}">
+                                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+                                    </form>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-control" onchange="window.location.href='/admin/vehicles?type=' + this.value">
+                                        <option value="">All Types</option>
+                                        <option value="Sedan" th:selected="${selectedType == 'Sedan'}">Sedan</option>
+                                        <option value="SUV" th:selected="${selectedType == 'SUV'}">SUV</option>
+                                        <option value="Hatchback" th:selected="${selectedType == 'Hatchback'}">Hatchback</option>
+                                        <option value="Van" th:selected="${selectedType == 'Van'}">Van</option>
+                                        <option value="Truck" th:selected="${selectedType == 'Truck'}">Truck</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Vehicle Number</th>
+                                            <th>Brand</th>
+                                            <th>Model</th>
+                                            <th>Type</th>
+                                            <th>Year</th>
+                                            <th>Color</th>
+                                            <th>Daily Rate</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="v : ${vehicles}">
+                                            <td th:text="${v.vehicleId}"></td>
+                                            <td th:text="${v.vehicleNumber}"></td>
+                                            <td th:text="${v.brand}"></td>
+                                            <td th:text="${v.model}"></td>
+                                            <td th:text="${v.vehicleType}"></td>
+                                            <td th:text="${v.year}"></td>
+                                            <td th:text="${v.color}"></td>
+                                            <td th:text="${'LKR ' + v.dailyRate}"></td>
+                                            <td>
+                                                <span class="badge"
+                                                      th:classappend="${v.availabilityStatus == 'Available'} ? 'bg-success' :
+                                                                    (${v.availabilityStatus == 'Booked'} ? 'bg-danger' : 'bg-warning')"
+                                                      th:text="${v.availabilityStatus}"></span>
+                                            </td>
+                                            <td>
+                                                <a th:href="@{/admin/vehicles/edit/{id}(id=${v.vehicleId})}" class="btn btn-sm btn-warning">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a th:href="@{/admin/vehicles/delete/{id}(id=${v.vehicleId})}"
+                                                   class="btn btn-sm btn-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this vehicle?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${vehicles.isEmpty()}">
+                                            <td colspan="10" class="text-center text-muted">No vehicles found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

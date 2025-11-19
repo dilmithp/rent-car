@@ -1,154 +1,94 @@
 package com.carrentalsystem.models;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "bookings")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(exclude = {"customer", "vehicle", "payment"})
+@ToString(exclude = {"customer", "vehicle", "payment"})
 public class Booking {
-    private int bookingId;
-    private int customerId;
-    private int vehicleId;
-    private Date bookingDate;
-    private Date startDate;
-    private Date endDate;
-    private int totalDays;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_id")
+    private Integer bookingId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    @NotNull(message = "Customer is required")
+    private Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id", nullable = false)
+    @NotNull(message = "Vehicle is required")
+    private Vehicle vehicle;
+
+    @Column(name = "booking_date", nullable = false)
+    @NotNull(message = "Booking date is required")
+    private LocalDate bookingDate;
+
+    @Column(name = "start_date", nullable = false)
+    @NotNull(message = "Start date is required")
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    @NotNull(message = "End date is required")
+    private LocalDate endDate;
+
+    @Column(name = "total_days", nullable = false)
+    private Integer totalDays;
+
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    @NotNull(message = "Total amount is required")
     private BigDecimal totalAmount;
-    private String bookingStatus;
-    private String paymentStatus;
+
+    @Column(name = "booking_status", length = 20, nullable = false)
+    private String bookingStatus = "Pending";
+
+    @Column(name = "payment_status", length = 20, nullable = false)
+    private String paymentStatus = "Pending";
+
+    @Column(name = "payment_slip_path", length = 500)
     private String paymentSlipPath;
-    private Timestamp createdAt;
 
-    public Booking() {
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Payment payment;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        if (bookingStatus == null) {
+            bookingStatus = "Pending";
+        }
+        if (paymentStatus == null) {
+            paymentStatus = "Pending";
+        }
+        if (bookingDate == null) {
+            bookingDate = LocalDate.now();
+        }
     }
 
-    public Booking(int bookingId, int customerId, int vehicleId, Date bookingDate,
-                   Date startDate, Date endDate, int totalDays, BigDecimal totalAmount,
-                   String bookingStatus, Timestamp createdAt) {
-        this.bookingId = bookingId;
-        this.customerId = customerId;
-        this.vehicleId = vehicleId;
-        this.bookingDate = bookingDate;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.totalDays = totalDays;
-        this.totalAmount = totalAmount;
-        this.bookingStatus = bookingStatus;
-        this.paymentStatus = "pending";
-        this.paymentSlipPath = null;
-        this.createdAt = createdAt;
+    // Helper methods for backward compatibility
+    @Transient
+    public Integer getCustomerId() {
+        return customer != null ? customer.getCustomerId() : null;
     }
 
-    public int getBookingId() {
-        return bookingId;
-    }
-
-    public void setBookingId(int bookingId) {
-        this.bookingId = bookingId;
-    }
-
-    public int getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(int customerId) {
-        this.customerId = customerId;
-    }
-
-    public int getVehicleId() {
-        return vehicleId;
-    }
-
-    public void setVehicleId(int vehicleId) {
-        this.vehicleId = vehicleId;
-    }
-
-    public Date getBookingDate() {
-        return bookingDate;
-    }
-
-    public void setBookingDate(Date bookingDate) {
-        this.bookingDate = bookingDate;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }
-
-    public int getTotalDays() {
-        return totalDays;
-    }
-
-    public void setTotalDays(int totalDays) {
-        this.totalDays = totalDays;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
-    public String getBookingStatus() {
-        return bookingStatus;
-    }
-
-    public void setBookingStatus(String bookingStatus) {
-        this.bookingStatus = bookingStatus;
-    }
-
-    public String getPaymentStatus() {
-        return paymentStatus;
-    }
-
-    public void setPaymentStatus(String paymentStatus) {
-        this.paymentStatus = paymentStatus;
-    }
-
-    public String getPaymentSlipPath() {
-        return paymentSlipPath;
-    }
-
-    public void setPaymentSlipPath(String paymentSlipPath) {
-        this.paymentSlipPath = paymentSlipPath;
-    }
-
-    public Timestamp getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Booking{" +
-                "bookingId=" + bookingId +
-                ", customerId=" + customerId +
-                ", vehicleId=" + vehicleId +
-                ", bookingDate=" + bookingDate +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", totalDays=" + totalDays +
-                ", totalAmount=" + totalAmount +
-                ", bookingStatus='" + bookingStatus + '\'' +
-                ", paymentStatus='" + paymentStatus + '\'' +
-                ", paymentSlipPath='" + paymentSlipPath + '\'' +
-                ", createdAt=" + createdAt +
-                '}';
+    @Transient
+    public Integer getVehicleId() {
+        return vehicle != null ? vehicle.getVehicleId() : null;
     }
 }
