@@ -190,7 +190,7 @@ public class CustomerPortalController {
             Customer customer = customerService.findByUserId(user.getUserId())
                     .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
-            Booking booking = bookingService.findById(id)
+            Booking booking = bookingService.findByIdWithDetails(id)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
             // Verify booking belongs to current customer
@@ -215,7 +215,7 @@ public class CustomerPortalController {
             Customer customer = customerService.findByUserId(user.getUserId())
                     .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
-            Booking booking = bookingService.findById(id)
+            Booking booking = bookingService.findByIdWithDetails(id)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
             // Verify booking belongs to current customer
@@ -245,6 +245,10 @@ public class CustomerPortalController {
                 .orElseThrow(() -> new RuntimeException("Customer profile not found"));
 
         List<Booking> bookings = bookingService.findByCustomerId(customer.getCustomerId());
+
+        if (bookings == null) {
+            bookings = List.of(); // Empty list instead of null
+        }
 
         if (status != null && !status.isEmpty()) {
             bookings = bookings.stream()

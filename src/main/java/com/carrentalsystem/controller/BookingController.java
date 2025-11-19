@@ -84,7 +84,7 @@ public class BookingController {
     @GetMapping("/view/{id}")
     public String viewBooking(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
         try {
-            Booking booking = bookingService.findById(id)
+            Booking booking = bookingService.findByIdWithDetails(id)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
             model.addAttribute("booking", booking);
             return "admin/booking-detail";
